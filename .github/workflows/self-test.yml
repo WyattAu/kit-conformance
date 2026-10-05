@@ -1,0 +1,12 @@
+name: harness-selftest
+
+# The harness must itself be valid: a reusable workflow with a YAML error
+# fails silently in every repo that calls it.
+on: [push, pull_request]
+
+jobs:
+  workflow-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/actionlint@v1

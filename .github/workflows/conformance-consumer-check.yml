@@ -1,0 +1,13 @@
+name: consumer-check
+
+# Proves the harness works by running it against a real kit.
+on:
+  schedule:
+    - cron: "37 5 * * 1"
+  workflow_dispatch:
+
+jobs:
+  flag-kit:
+    uses: WyattAu/flag-kit/.github/workflows/conformance.yml@main
+  otelkit:
+    uses: WyattAu/otelkit/.github/workflows/conformance.yml@main

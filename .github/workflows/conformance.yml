@@ -1,0 +1,82 @@
+name: conformance
+
+# Reusable conformance harness for kit crates.
+# Called by kit repos; not intended to run in this repo's own CI.
+on:
+  workflow_call:
+    inputs:
+      crate-path:
+        description: "Path to the crate root (the directory with Cargo.toml)"
+        required: false
+        type: string
+        default: "."
+      msrv:
+        description: "Minimum supported Rust version, e.g. 1.85"
+        required: false
+        type: string
+        default: "1.85"
+      features:
+        description: "Comma-separated features to test with (empty = --all-features)"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (MSRV + stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Feature selection
+        id: features
+        run: |
+          if [ -n "${{ inputs.features }}" ]; then
+            echo "args=--no-default-features --features ${{ inputs.features }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=--all-features" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tests (${{ inputs.crate-path }})
+        run: cargo test ${{ steps.features.outputs.args }}
+        working-directory: ${{ inputs.crate-path }}
+
+      - name: Doc tests
+        run: cargo test --doc ${{ steps.features.outputs.args }}
+        working-directory: ${{ inputs.crate-path }}
+
+      - name: Clippy (deny warnings)
+        run: cargo clippy --all-targets ${{ steps.features.outputs.args }} -- -D warnings
+        working-directory: ${{ inputs.crate-path }}
+
+      - name: Docs build
+        run: cargo doc --no-deps ${{ steps.features.outputs.args }}
+        working-directory: ${{ inputs.crate-path }}
+
+      - name: Formatting
+        run: cargo fmt --check
+        working-directory: ${{ inputs.crate-path }}
+
+      # semver-checks needs a baseline. Kits publish to crates.io, so the
+      # baseline is the latest published version. A brand-new crate has no
+      # baseline and this step is skipped rather than failed.
+      - name: Semver check against latest release
+        continue-on-error: true
+        run: |
+          cargo install cargo-semver-checks --locked
+          cargo semver-checks check-release --all-features
+
+      - name: MSRV probe (${{ inputs.msrv }})
+        uses: taiki-e/install-action@msrv
+        with:
+          toolchain: ${{ inputs.msrv }}
+      - name: MSRV build check
+        continue-on-error: true
+        run: cargo +${{ inputs.msrv }} check --all-features
+        working-directory: ${{ inputs.crate-path }}
