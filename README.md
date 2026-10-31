@@ -58,7 +58,7 @@ rust-version = "1.85"
 
 A template is copied once and then drifts: six kits later, seven different
 definitions of "conforming", none of which anyone remembers updating. A
-workflow referenced by tag cannot drift — a fix here reaches every kit on
+workflow referenced by tag cannot drift; a fix here reaches every kit on
 its next run, and a kit that stops passing is visibly broken rather than
 quietly non-conforming.
 
@@ -78,7 +78,7 @@ happen without them.
 ## Scope boundary
 
 This repo checks *mechanical* conformance. It does not judge whether an API
-is a good abstraction — that is what dogfooding in a real consumer
+is a good abstraction; that is what dogfooding in a real consumer
 (CivitForge, `flaglab`) is for. Conformance without dogfooding yields
 consistently mediocre code; this harness exists so dogfooding is the thing
 that varies, not the baseline.
